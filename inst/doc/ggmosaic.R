@@ -1,0 +1,240 @@
+## ----setup, echo=FALSE---------------------------------------------------
+
+knitr::opts_chunk$set(fig.width = 6,
+                    fig.height = 4,
+                    fig.align='center',
+                    dev = "png")
+
+
+## ----echo=FALSE, message=FALSE-------------------------------------------
+library(ggmosaic)
+# shouldn't be needed between these comments
+library(plotly)
+library(dplyr)
+library(purrr)
+library(tidyr)
+# shouldn't be needed
+library(ggplot2)
+library(gridExtra)
+library(grid)
+data(NHANES, package="NHANES")
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+  if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, position = c("bottom", "right")) {
+  
+  plots <- list(...)
+  position <- match.arg(position)
+  g <- ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
+  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+  lheight <- sum(legend$height)
+  lwidth <- sum(legend$width)
+  gl <- lapply(plots, function(x) x + theme(legend.position="none"))
+  gl <- c(gl, ncol = ncol, nrow = nrow)
+  
+  combined <- switch(position,
+                     "bottom" = arrangeGrob(do.call(arrangeGrob, gl),
+                                            legend,
+                                            ncol = 1,
+                                            heights = unit.c(unit(1, "npc") - lheight, lheight)),
+                     "right" = arrangeGrob(do.call(arrangeGrob, gl),
+                                           legend,
+                                           ncol = 2,
+                                           widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
+  grid.newpage()
+  grid.draw(combined)
+  
+}
+
+## ----echo=TRUE, tidy=TRUE, fig.align='center'----------------------------
+    
+get.separators() 
+    
+
+## ----eval=FALSE, echo=TRUE, tidy=TRUE, fig.align='center'----------------
+#  
+#  set.separators(c(":", ";","|"))
+#  
+
+## ----formula-1b, message=FALSE, fig.align='center'-----------------------
+set.separators(c(":", ";","|"))
+
+ ggplot(data = NHANES) +
+   geom_mosaic(aes(weight = Weight, x = product(SleepHrsNight), fill=factor(SleepHrsNight)), na.rm=TRUE) +
+   labs(x="Hours of sleep a night ", title='f(SleepHrsNight)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+## ----formula-2b, message=FALSE, fig.align='center'-----------------------
+set.separators(c(":", ";","|"))
+
+ ggplot(data = NHANES) +
+   geom_mosaic(aes(weight = Weight, x = product(SleepHrsNight, AgeDecade), fill=factor(SleepHrsNight)), na.rm=TRUE) +    theme(axis.text.x=element_text(angle=-25, hjust= .1)) + labs(x="Age in Decades ", title='f(SleepHrsNight | AgeDecade) f(AgeDecade)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+## ----formula-4b, message=FALSE, fig.align='center'-----------------------
+set.separators(c(":", ";","_"))
+
+ ggplot(data = NHANES) +
+   geom_mosaic(aes( x = product(SleepHrsNight, AgeDecade), fill=factor(SleepHrsNight), conds=product(Gender)), na.rm=TRUE, divider=mosaic("v")) +    theme(axis.text.x=element_text(angle=-25, hjust= .1)) + labs(x="Age in Decades ", title='f(SleepHrsNight, AgeDecade | Gender)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+
+## ----formula-5b, message=FALSE, fig.align='center'-----------------------
+ggplot(data = NHANES) +
+   geom_mosaic(aes( x = product(SleepHrsNight, AgeDecade), fill=factor(SleepHrsNight)), na.rm=TRUE) +    theme(axis.text.x=element_text(angle=-25, hjust= .1)) +
+   labs(x="Age in Decades ", title='f(SleepHrsNight, AgeDecade | Gender)')  + facet_grid(Gender~.) + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+
+## ----order-b, message=FALSE, fig.align='center'--------------------------
+
+order1 <- ggplot(data = NHANES) + geom_mosaic(aes(weight = Weight, x = product(SleepHrsNight, Gender), fill=factor(SleepHrsNight)), na.rm=TRUE, offset=0.015) + labs(x="Gender ", title='f(SleepHrsNight | Gender)  f(Gender)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE)) + theme(plot.title = element_text(size = rel(1)))
+
+order2<- ggplot(data = NHANES) + geom_mosaic(aes(weight = Weight, x = product(Gender, SleepHrsNight), fill=factor(SleepHrsNight)), na.rm=TRUE, offset=0.015) + labs(x="", y="Gender", title='f(Gender | SleepHrsNight)  f(SleepHrsNight)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE)) + theme(plot.title = element_text(size = rel(1))) + coord_flip()
+
+
+## ----order-3, message=FALSE, fig.width = 8, fig.height = 4, fig.align='center'----
+
+grid_arrange_shared_legend(order1, order2, ncol = 2, nrow = 1, position = "right")
+
+
+
+## ----partitions, message=FALSE, fig.width = 7, fig.height = 3.5----------
+set.separators(c(":", ";","|"))
+
+a2 <- ggplot(data = NHANES) +
+   geom_mosaic(aes( x = product(SleepHrsNight), fill=factor(SleepHrsNight)), divider="hbar", na.rm=TRUE) + theme(#axis.text.x=element_text(angle=35, hjust= 1),
+     legend.position="none")+labs(x=" ", title='divider= "hbar"') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+a1 <- ggplot(data = NHANES) +
+   geom_mosaic(aes( x = product(SleepHrsNight), fill=factor(SleepHrsNight)), divider="hspine", na.rm=TRUE) + theme(#axis.text.x=element_text(angle=35, hjust= 1),
+     legend.position="none") + labs(x=" ", title='divider= "hspine"') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+b2 <- ggplot(data = NHANES) +
+   geom_mosaic(aes( x = product(SleepHrsNight), fill=factor(SleepHrsNight)), divider="vbar", na.rm=TRUE) + theme(legend.position="none") + labs(y=" ", x="", title='divider= "vbar"') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+ 
+b1 <- ggplot(data = NHANES) +
+   geom_mosaic(aes(  x = product(SleepHrsNight), fill=factor(SleepHrsNight)), divider="vspine", na.rm=TRUE) + theme(legend.position="none") + labs(y=" ", x="", title='divider= "vspine"') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+## ----plot, message=FALSE, fig.width = 8, fig.height = 4.5, fig.align='center'----
+
+grid_arrange_shared_legend(a1, a2, b1, b2, ncol = 2, nrow = 2, position = "right")
+
+
+## ----mosaic-a, message=FALSE, fig.width = 7, fig.height = 3.5------------
+set.separators(c(":", ";","|"))
+
+m1 <-ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=mosaic("h")) +
+   theme(axis.text.x=element_blank(), legend.position="none")+labs(x=" ", title='divider= mosaic()') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+m2 <-ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=mosaic("v")) +
+   theme(axis.text.x=element_blank(), legend.position="none")+labs(x=" ", title='divider= mosaic("v")') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+m3 <-ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=ddecker()) +
+   theme(axis.text.x=element_blank(), legend.position="none")+labs(x=" ", title='divider= ddecker()') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+
+
+## ----mosaic-3, message=FALSE, fig.width = 8, fig.height = 4.5, fig.align='center'----
+
+grid_arrange_shared_legend(m1, m2, m3, ncol = 3, nrow = 1, position = "right")
+
+
+## ----mosaic-d, message=FALSE, fig.width = 7, fig.height = 3.5------------
+
+m4 <-  ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=c("vspine", "vspine", "hbar")) +
+   theme(axis.text.x=element_blank(), legend.position="none")+labs(x=" ", title='divider= c("vspine", "vspine", "hbar")') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+m5 <-  ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=c("hbar", "vspine", "hbar")) +
+   theme(axis.text.x=element_blank(), legend.position="none")+labs(x=" ", title='divider= c("hbar", "vspine", "hbar")') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+m6 <-  ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=c("hspine", "hspine", "hspine")) +
+   theme(axis.text.x=element_blank(),
+legend.position="none")+labs(x=" ", title='divider= c("hspine", "hspine", "hspine")') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+m7 <-  ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=c("vspine", "vspine", "vspine")) +
+   theme(axis.text.x=element_blank(), legend.position="none")+labs(x=" ", title='divider= c("vspine", "vspine", "vspine")') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+
+## ----mosaic-6, message=FALSE, fig.width = 8, fig.height = 4.5, fig.align='center'----
+
+grid_arrange_shared_legend(m4, m5, m6, m7, ncol = 2, nrow = 2, position="right")
+
+
+## ----offset-b, message=FALSE---------------------------------------------
+
+oo1 <- ggplot(data = NHANES) +
+  geom_mosaic(aes(weight = Weight,  x = product(Age), fill=factor(SleepHrsNight)), na.rm=TRUE) +   theme(axis.text.x=element_text(angle=0, hjust= .5))+labs(x="Age", y=" ",  title=" offset = 0.01") + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE)) 
+
+o1 <- ggplot(data = happy) +
+  geom_mosaic(aes(weight = wtssall,  x = product(age), fill=marital)) +
+  theme(axis.text.x=element_text(angle=0, hjust= .5))+labs(x="Age", y=" ",  title=" offset = 0.01")+ guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE)) 
+
+oo2 <- ggplot(data = NHANES) +
+  geom_mosaic(aes(weight = Weight,  x = product(Age), fill=factor(SleepHrsNight)), offset=0, na.rm=TRUE) +   theme(axis.text.x=element_text(angle=0, hjust= .5))+labs(x="Age", y=" ",  title=" offset = 0")+ guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE)) 
+
+o2 <- ggplot(data = happy) +
+  geom_mosaic(aes(weight = wtssall,  x = product(age), fill=marital), offset = 0) +
+  theme(axis.text.x=element_text(angle=0, hjust= .5))+labs(x="Age", y=" ",  title=" offset = 0") + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+
+## ----offset-plot, message=FALSE, fig.width = 8, fig.height = 4, fig.align='center'----
+
+grid_arrange_shared_legend(oo1, oo2, nrow = 1, ncol =2, position="right")
+
+
+## ----plotly, message=FALSE, echo=TRUE, tidy=TRUE, eval=FALSE-------------
+#  
+#  
+#  gg <-ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=ddecker(), offset = 0.025)
+
+## ----plotly-2, message=FALSE, echo=FALSE, tidy=TRUE----------------------
+
+
+gg <-ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), offset=0.025, na.rm=T, divider=ddecker()) + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
+
+
+## ----plotly-3, message=FALSE, echo=TRUE, tidy=TRUE-----------------------
+# just for now commented out
+# ggplotly(gg)
+
+
+
