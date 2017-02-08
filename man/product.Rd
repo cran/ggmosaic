@@ -2,16 +2,23 @@
 % Please edit documentation in R/stat-mosaic.r
 \name{product}
 \alias{product}
-\title{Product}
+\title{Wrapper for a list}
 \usage{
 product(x, ...)
 }
 \arguments{
-\item{x}{variable}
+\item{x}{name of the variable going into the product plot.}
 
-\item{...}{other arguments passed on}
+\item{...}{arbitrarily many additional variables.}
 }
 \description{
-This function creates a product variable based on all combinations of the variables.
+Wrapper for a list
+}
+\examples{
+data(Titanic)
+titanic <- as.data.frame(Titanic)
+titanic$Survived <- factor(titanic$Survived, levels=c("Yes", "No"))
+ggplot(data=titanic) +
+  geom_mosaic(aes(weight=Freq, x=product(Survived, Class), fill=Survived))
 }
 

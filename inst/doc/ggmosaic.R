@@ -78,32 +78,19 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
   
 }
 
-## ----echo=TRUE, tidy=TRUE, fig.align='center'----------------------------
-    
-get.separators() 
-    
-
-## ----eval=FALSE, echo=TRUE, tidy=TRUE, fig.align='center'----------------
-#  
-#  set.separators(c(":", ";","|"))
-#  
-
 ## ----formula-1b, message=FALSE, fig.align='center'-----------------------
-set.separators(c(":", ";","|"))
 
  ggplot(data = NHANES) +
    geom_mosaic(aes(weight = Weight, x = product(SleepHrsNight), fill=factor(SleepHrsNight)), na.rm=TRUE) +
    labs(x="Hours of sleep a night ", title='f(SleepHrsNight)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
 
 ## ----formula-2b, message=FALSE, fig.align='center'-----------------------
-set.separators(c(":", ";","|"))
 
  ggplot(data = NHANES) +
    geom_mosaic(aes(weight = Weight, x = product(SleepHrsNight, AgeDecade), fill=factor(SleepHrsNight)), na.rm=TRUE) +    theme(axis.text.x=element_text(angle=-25, hjust= .1)) + labs(x="Age in Decades ", title='f(SleepHrsNight | AgeDecade) f(AgeDecade)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
 
 
 ## ----formula-4b, message=FALSE, fig.align='center'-----------------------
-set.separators(c(":", ";","_"))
 
  ggplot(data = NHANES) +
    geom_mosaic(aes( x = product(SleepHrsNight, AgeDecade), fill=factor(SleepHrsNight), conds=product(Gender)), na.rm=TRUE, divider=mosaic("v")) +    theme(axis.text.x=element_text(angle=-25, hjust= .1)) + labs(x="Age in Decades ", title='f(SleepHrsNight, AgeDecade | Gender)') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))
@@ -131,7 +118,6 @@ grid_arrange_shared_legend(order1, order2, ncol = 2, nrow = 1, position = "right
 
 
 ## ----partitions, message=FALSE, fig.width = 7, fig.height = 3.5----------
-set.separators(c(":", ";","|"))
 
 a2 <- ggplot(data = NHANES) +
    geom_mosaic(aes( x = product(SleepHrsNight), fill=factor(SleepHrsNight)), divider="hbar", na.rm=TRUE) + theme(#axis.text.x=element_text(angle=35, hjust= 1),
@@ -156,7 +142,7 @@ grid_arrange_shared_legend(a1, a2, b1, b2, ncol = 2, nrow = 2, position = "right
 
 
 ## ----mosaic-a, message=FALSE, fig.width = 7, fig.height = 3.5------------
-set.separators(c(":", ";","|"))
+#set.separators(c(":", ";","|"))
 
 m1 <-ggplot(data = NHANES) + geom_mosaic(aes(x=product(SleepHrsNight, Gender, AgeDecade), fill = factor(SleepHrsNight)), na.rm=T, divider=mosaic("h")) +
    theme(axis.text.x=element_blank(), legend.position="none")+labs(x=" ", title='divider= mosaic()') + guides(fill=guide_legend(title = "SleepHrsNight", reverse = TRUE))

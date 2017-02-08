@@ -1,6 +1,6 @@
 Package: ggmosaic
 Title: Mosaic Plots in the 'ggplot2' Framework
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: c(
     person("Haley", "Jeppson", email = "hjeppson@iastate.edu", role = c("aut", "cre")),
     person("Heike", "Hofmann", email = "hofmann@iastate.edu", role = "aut"),
@@ -18,11 +18,11 @@ RoxygenNote: 5.0.1.9000
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2016-12-29 16:40:09 UTC; haley
+Packaged: 2017-02-08 17:56:46 UTC; haley
 Author: Haley Jeppson [aut, cre],
   Heike Hofmann [aut],
   Di Cook [aut],
   Hadley Wickham [ctb]
 Maintainer: Haley Jeppson <hjeppson@iastate.edu>
 Repository: CRAN
-Date/Publication: 2016-12-30 01:07:49
+Date/Publication: 2017-02-09 00:47:04

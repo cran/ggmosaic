@@ -68,3 +68,9 @@ ggplot(data = NHANES) + geom_mosaic(aes(x=product(PhysActive), fill=SleepTrouble
 
 ggplot(data = NHANES) + geom_mosaic(aes(x=product(PhysActive), fill=Diabetes))
 ggplot(data = NHANES) + geom_mosaic(aes(x=product(Race3), fill=Diabetes))
+
+
+
+ggplot(data=NHANES) + geom_boxplot(aes(HealthGen, Weight ))
+ggplot(data=NHANES) + geom_histogram(aes(Weight, color=HealthGen)) + facet_grid(~HealthGen)
+
