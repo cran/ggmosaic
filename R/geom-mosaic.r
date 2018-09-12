@@ -3,12 +3,12 @@
 #' @export
 #'
 #' @description
-#' A mosaic plot is a convenient graphical summary of the conditional ditributions
+#' A mosaic plot is a convenient graphical summary of the conditional distributions
 #' in a contingency table and is composed of spines in alternating directions.
 #'
 #'
 #' @inheritParams ggplot2::layer
-#' @param divider Divider function. The default divider function is mosaic() which will use spines in alternating directions. The four options for partioning:
+#' @param divider Divider function. The default divider function is mosaic() which will use spines in alternating directions. The four options for partitioning:
 #' \itemize{
 #' \item \code{vspine} Vertical spine partition: width constant, height varies.
 #' \item \code{hspine}  Horizontal spine partition: height constant, width varies.
@@ -29,18 +29,16 @@
 #'   geom_mosaic(aes(weight=Freq, x=product(Class), fill=Survived))
 #' # good practice: use the 'dependent' variable (or most important variable)
 #' # as fill variable
+#'
 #' ggplot(data=titanic) +
 #'   geom_mosaic(aes(weight=Freq, x=product(Class, Age), fill=Survived))
-#'
-#' # we can change where we define variables
-#' ggplot(data=titanic, aes(weight = Freq, fill=Survived, x=product(Class, Age))) +
-#'   geom_mosaic()
 #'
 #' ggplot(data=titanic) +
 #'   geom_mosaic(aes(weight=Freq, x=product(Class), conds=product(Age), fill=Survived))
 #' ggplot(data=titanic) +
 #'   geom_mosaic(aes(weight=Freq, x=product(Survived, Class), fill=Age))
 #'
+#' # Just excluded for timing. Examples are included in testing to make sure they work
 #' \dontrun{
 #' data(happy, package="productplots")
 #'
@@ -70,7 +68,7 @@
 #'   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy), na.rm=TRUE, offset=0) +
 #'   scale_x_productlist("Age", labels=labels)
 #' ggplot(data = happy) +
-#'   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy, conds = sex),
+#'   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy, conds = product(sex)),
 #'   divider=mosaic("v"), na.rm=TRUE, offset=0.001) +
 #'   scale_x_productlist("Age", labels=labels)
 #' # facetting works!!!!
@@ -89,13 +87,45 @@
 #' ggplot(data = happy) +
 #'  geom_mosaic(aes(weight = wtssall, x = product(health), fill = health)) +
 #'  facet_grid(happy~.)
-#' }
-
+#' } # end of don't run
 
 geom_mosaic <- function(mapping = NULL, data = NULL, stat = "mosaic",
                         position = "identity", na.rm = FALSE,  divider = mosaic(), offset = 0.01,
-                        show.legend = NA, inherit.aes = TRUE, ...)
+                        show.legend = NA, inherit.aes = FALSE, ...)
 {
+  if (!is.null(mapping$y)) {
+    stop("stat_mosaic() must not be used with a y aesthetic.", call. = FALSE)
+  } else mapping$y <- structure(1L, class = "productlist")
+
+  aes_x <- mapping$x
+  if (!is.null(aes_x)) {
+    aes_x <- rlang::eval_tidy(mapping$x)
+    mapping$x <- structure(1L, class = "productlist")
+    var_x <- paste0("x", seq_along(aes_x), "__", as.character(aes_x))
+    for (i in seq_along(var_x)) {
+      mapping[[var_x[i]]] <- aes_x[[i]]
+    }
+  }
+
+
+  # aes_y <- mapping$y
+  # if (!is.null(aes_y)) {
+  #   aes_y <- rlang::eval_tidy(mapping$y)
+  #   mapping$y <- structure(1L, class = "productlist")
+  #   var_y <- paste0("y", seq_along(aes_y), "__", as.character(aes_y))
+  #   for (i in seq_along(var_y)) {
+  #     mapping[[var_y[i]]] <- aes_y[[i]]
+  #   }
+  # }
+  aes_conds <- mapping$conds
+  if (!is.null(aes_conds)) {
+    aes_conds <- rlang::eval_tidy(mapping$conds)
+    mapping$conds <- structure(1L, class = "productlist")
+    var_conds <- paste0("conds", seq_along(aes_conds), "__", as.character(aes_conds))
+    for (i in seq_along(var_conds)) {
+      mapping[[var_conds[i]]] <- aes_conds[[i]]
+    }
+  }
   ggplot2::layer(
     data = data,
     mapping = mapping,
@@ -103,7 +133,8 @@ geom_mosaic <- function(mapping = NULL, data = NULL, stat = "mosaic",
     geom = GeomMosaic,
     position = position,
     show.legend = show.legend,
-    inherit.aes = inherit.aes,
+    check.aes = FALSE,
+    inherit.aes = FALSE, # only FALSE to turn the warning off
     params = list(
       na.rm = na.rm,
       divider = divider,
@@ -117,9 +148,8 @@ geom_mosaic <- function(mapping = NULL, data = NULL, stat = "mosaic",
 GeomMosaic <- ggplot2::ggproto(
   "GeomMosaic", ggplot2::Geom,
   setup_data = function(data, params) {
-  #  cat("setup_data in GeomMosaic\n")
-
-    #   browser()
+    #cat("setup_data in GeomMosaic\n")
+    #browser()
     data
   },
   required_aes = c("xmin", "xmax", "ymin", "ymax"),
@@ -129,22 +159,24 @@ GeomMosaic <- ggplot2::ggproto(
                              linewidth=.1, weight = 1, x = NULL, y = NULL, conds = NULL),
 
   draw_panel = function(data, panel_scales, coord) {
-  #  cat("draw_panel in GeomMosaic\n")
- # browser()
+    #cat("draw_panel in GeomMosaic\n")
+    #browser()
     if (all(is.na(data$colour)))
-      data$colour <- alpha(data$fill, data$alpha) # regard alpha in colour determination
+      data$colour <- scales::alpha(data$fill, data$alpha) # regard alpha in colour determination
 
-      GeomRect$draw_panel(subset(data, level==max(data$level)), panel_scales, coord)
-      },
+    GeomRect$draw_panel(subset(data, level==max(data$level)), panel_scales, coord)
+  },
 
   check_aesthetics = function(x, n) {
+    #browser()
     ns <- vapply(x, length, numeric(1))
     good <- ns == 1L | ns == n
+
 
     if (all(good)) {
       return()
     }
-    # browser()
+
     stop(
       "Aesthetics must be either length 1 or the same as the data (", n, "): ",
       paste(names(!good), collapse = ", "),
@@ -152,5 +184,9 @@ GeomMosaic <- ggplot2::ggproto(
     )
   },
 
+
   draw_key = ggplot2::draw_key_rect
 )
+
+
+

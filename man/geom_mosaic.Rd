@@ -7,31 +7,31 @@
 \usage{
 geom_mosaic(mapping = NULL, data = NULL, stat = "mosaic",
   position = "identity", na.rm = FALSE, divider = mosaic(),
-  offset = 0.01, show.legend = NA, inherit.aes = TRUE, ...)
+  offset = 0.01, show.legend = NA, inherit.aes = FALSE, ...)
 
 stat_mosaic(mapping = NULL, data = NULL, geom = "mosaic",
-  position = "identity", na.rm = TRUE, divider = mosaic(),
+  position = "identity", na.rm = FALSE, divider = mosaic(),
   show.legend = NA, inherit.aes = TRUE, offset = 0.01, ...)
 }
 \arguments{
-\item{mapping}{Set of aesthetic mappings created by \code{\link{aes}} or
-\code{\link{aes_}}. If specified and \code{inherit.aes = TRUE} (the
+\item{mapping}{Set of aesthetic mappings created by \code{\link[=aes]{aes()}} or
+\code{\link[=aes_]{aes_()}}. If specified and \code{inherit.aes = TRUE} (the
 default), it is combined with the default mapping at the top level of the
 plot. You must supply \code{mapping} if there is no plot mapping.}
 
 \item{data}{The data to be displayed in this layer. There are three
-   options:
+options:
 
-   If \code{NULL}, the default, the data is inherited from the plot
-   data as specified in the call to \code{\link{ggplot}}.
+If \code{NULL}, the default, the data is inherited from the plot
+data as specified in the call to \code{\link[=ggplot]{ggplot()}}.
 
-   A \code{data.frame}, or other object, will override the plot
-   data. All objects will be fortified to produce a data frame. See
-   \code{\link{fortify}} for which variables will be created.
+A \code{data.frame}, or other object, will override the plot
+data. All objects will be fortified to produce a data frame. See
+\code{\link[=fortify]{fortify()}} for which variables will be created.
 
-   A \code{function} will be called with a single argument,
-   the plot data. The return value must be a \code{data.frame.}, and
-   will be used as the layer data.}
+A \code{function} will be called with a single argument,
+the plot data. The return value must be a \code{data.frame.}, and
+will be used as the layer data.}
 
 \item{stat}{The statistical transformation to use on the data for this
 layer, as a string.}
@@ -41,7 +41,7 @@ a call to a position adjustment function.}
 
 \item{na.rm}{If \code{FALSE} (the default), removes missing values with a warning. If \code{TRUE} silently removes missing values.}
 
-\item{divider}{Divider function. The default divider function is mosaic() which will use spines in alternating directions. The four options for partioning:
+\item{divider}{Divider function. The default divider function is mosaic() which will use spines in alternating directions. The four options for partitioning:
 \itemize{
 \item \code{vspine} Vertical spine partition: width constant, height varies.
 \item \code{hspine}  Horizontal spine partition: height constant, width varies.
@@ -53,19 +53,21 @@ a call to a position adjustment function.}
 
 \item{show.legend}{logical. Should this layer be included in the legends?
 \code{NA}, the default, includes if any aesthetics are mapped.
-\code{FALSE} never includes, and \code{TRUE} always includes.}
+\code{FALSE} never includes, and \code{TRUE} always includes.
+It can also be a named logical vector to finely select the aesthetics to
+display.}
 
 \item{inherit.aes}{If \code{FALSE}, overrides the default aesthetics,
 rather than combining with them. This is most useful for helper functions
 that define both data and aesthetics and shouldn't inherit behaviour from
-the default plot specification, e.g. \code{\link{borders}}.}
+the default plot specification, e.g. \code{\link[=borders]{borders()}}.}
 
 \item{...}{other arguments passed on to \code{layer}. These are often aesthetics, used to set an aesthetic to a fixed value, like \code{color = 'red'} or \code{size = 3}. They may also be parameters to the paired geom/stat.}
 
 \item{geom}{The geometric object to use display the data}
 }
 \description{
-A mosaic plot is a convenient graphical summary of the conditional ditributions
+A mosaic plot is a convenient graphical summary of the conditional distributions
 in a contingency table and is composed of spines in alternating directions.
 }
 \section{Computed variables}{
@@ -77,6 +79,7 @@ in a contingency table and is composed of spines in alternating directions.
 \item{ymax}{location of top right corner}
 }
 }
+
 \examples{
 
 data(Titanic)
@@ -88,18 +91,16 @@ ggplot(data=titanic) +
   geom_mosaic(aes(weight=Freq, x=product(Class), fill=Survived))
 # good practice: use the 'dependent' variable (or most important variable)
 # as fill variable
+
 ggplot(data=titanic) +
   geom_mosaic(aes(weight=Freq, x=product(Class, Age), fill=Survived))
-
-# we can change where we define variables
-ggplot(data=titanic, aes(weight = Freq, fill=Survived, x=product(Class, Age))) +
-  geom_mosaic()
 
 ggplot(data=titanic) +
   geom_mosaic(aes(weight=Freq, x=product(Class), conds=product(Age), fill=Survived))
 ggplot(data=titanic) +
   geom_mosaic(aes(weight=Freq, x=product(Survived, Class), fill=Age))
 
+# Just excluded for timing. Examples are included in testing to make sure they work
 \dontrun{
 data(happy, package="productplots")
 
@@ -129,7 +130,7 @@ ggplot(data = happy) +
   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy), na.rm=TRUE, offset=0) +
   scale_x_productlist("Age", labels=labels)
 ggplot(data = happy) +
-  geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy, conds = sex),
+  geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy, conds = product(sex)),
   divider=mosaic("v"), na.rm=TRUE, offset=0.001) +
   scale_x_productlist("Age", labels=labels)
 # facetting works!!!!
@@ -148,6 +149,5 @@ ggplot(data = happy) +
 ggplot(data = happy) +
  geom_mosaic(aes(weight = wtssall, x = product(health), fill = health)) +
  facet_grid(happy~.)
+} # end of don't run
 }
-}
-
