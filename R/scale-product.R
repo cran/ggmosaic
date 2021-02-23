@@ -4,6 +4,14 @@ is.discrete <- function(x) {
   is.factor(x) || is.character(x) || is.logical(x)
 }
 
+product_names <- function() {
+  function(x) {
+    #cat(" in product_breaks\n")
+    #browser()
+    unique(x)
+  }
+}
+
 product_breaks <- function() {
   function(x) {
     #cat(" in product_breaks\n")
@@ -16,69 +24,50 @@ product_labels <- function() {
   function(x) {
     #cat(" in product_labels\n")
     #browser()
+
     unique(x)
   }
 }
 
 is.waive <- getFromNamespace("is.waive", "ggplot2")
 
-#' Helper function that ggplot2 needs for determining scales on x and y
-#'
-#' @param x variable under consideration
-#' @return character string "product"
-#' @importFrom ggplot2 scale_type
-#' @export
-scale_type.product <- function(x) {
-  #cat("checking for type product\n")
-  #browser()
-  "product"
-}
+
 
 #' Helper function for determining scales
 #'
 #' Used internally to determine class of variable x
 #' @param x variable
 #' @return character string "productlist"
+#' @importFrom ggplot2 scale_type
 #' @export
 scale_type.productlist <- function(x) {
-  #cat("checking for type productlist\n")
+  #  cat("checking for type productlist\n")
   #browser()
   "productlist"
 }
 
-#' Helper function for determining scales
-#'
-#' Used internally, might not needed to be exported. HH: XXXX let's check
-#' @param x variable
-#' @return character string "productlist"
-#' @export
-scale_type.tbl_df <- function(x) {
-  #cat("checking for type productlist\n")
-  #browser()
-  if ("productlist" %in% class(x[[1]]))
-    return("productlist")
-  "tbl_df"
-}
+
 
 
 #' Determining scales for mosaics
 #'
+#' @param name set to pseudo waiver function `product_names` by default.
 #' @inheritParams ggplot2::continuous_scale
-#' @importFrom ggplot2 waiver
 #' @export
-scale_x_productlist <- function(name = waiver(), breaks = product_breaks(),
+scale_x_productlist <- function(name = ggplot2::waiver(), breaks = product_breaks(),
                                 minor_breaks = NULL, labels = product_labels(),
-                                limits = NULL, expand = waiver(), oob = scales:::censor,
+                                limits = NULL, expand = ggplot2::waiver(), oob = scales:::censor,
                                 na.value = NA_real_, trans = "identity",
-                                position = "bottom", sec.axis = waiver()) {
+                                position = "bottom", sec.axis = ggplot2::waiver()) {
   #browser()
   sc <- ggplot2::continuous_scale(
     c("x", "xmin", "xmax", "xend", "xintercept", "xmin_final", "xmax_final", "xlower", "xmiddle", "xupper"),
     "position_c", identity, name = name, breaks = breaks,
     minor_breaks = minor_breaks, labels = labels, limits = limits,
     expand = expand, oob = oob, na.value = na.value, trans = trans,
-    guide = "none", position = position, super = ScaleContinuousProduct
+    guide = ggplot2::waiver(), position = position, super = ScaleContinuousProduct
   )
+
 
   if (!is.waive(sec.axis)) {
     if (is.formula(sec.axis)) sec.axis <- ggplot2::sec_axis(sec.axis)
@@ -90,21 +79,20 @@ scale_x_productlist <- function(name = waiver(), breaks = product_breaks(),
 }
 
 #' @rdname scale_x_productlist
-#' @importFrom ggplot2 waiver
 #' @param sec.axis specify a secondary axis
 #' @export
-scale_y_productlist <- function(name = waiver(), breaks = product_breaks(),
+scale_y_productlist <- function(name = ggplot2::waiver(), breaks = product_breaks(),
                                 minor_breaks = NULL, labels = product_labels(),
-                                limits = NULL, expand = waiver(), oob = scales:::censor,
+                                limits = NULL, expand = ggplot2::waiver(), oob = scales:::censor,
                                 na.value = NA_real_, trans = "identity",
-                                position = "left", sec.axis = waiver()) {
+                                position = "left", sec.axis = ggplot2::waiver()) {
   #browser()
   sc <- ggplot2::continuous_scale(
     c("y", "ymin", "ymax", "yend", "yintercept", "ymin_final", "ymax_final", "ylower", "ymiddle", "yupper"),
     "position_c", identity, name = name, breaks = breaks,
     minor_breaks = minor_breaks, labels = labels, limits = limits,
     expand = expand, oob = oob, na.value = na.value, trans = trans,
-    guide = "none", position = position, super = ScaleContinuousProduct
+    guide = ggplot2::waiver(), position = position, super = ScaleContinuousProduct
   )
 
   if (!is.waive(sec.axis)) {
@@ -129,10 +117,16 @@ ScaleContinuousProduct <- ggproto(
     if (is.list(x)) {
       x <- x[[1]]
       if ("Scale" %in% class(x)) {
+        #browser()
         # re-assign the scale values now that we have the information - but only if necessary
         if (is.function(self$breaks)) self$breaks <- x$breaks
         if (is.function(self$labels)) self$labels <- x$labels
-        #browser()
+        if (is.waive(self$name)) {
+          self$product_name <- gsub("x__alpha__", "", x$name)
+          self$product_name <- gsub("x__fill__", "", self$product_name)
+          self$product_name <- gsub("x__", "", self$product_name)
+          self$product_name <- gsub("conds\\d__", "", self$product_name)
+        }
         #cat("\n")
         return()
       }
@@ -156,6 +150,13 @@ ScaleContinuousProduct <- ggproto(
   dimension = function(self, expand = c(0, 0)) {
     #cat("dimension in ScaleContinuousProduct\n")
     c(-0.05,1.05)
+  },
+  make_title = function(title, self) {
+    #browser()
+    if(title %in% self$aesthetics){
+      title <- self$product_name
+    }
+    else title
   }
 )
 

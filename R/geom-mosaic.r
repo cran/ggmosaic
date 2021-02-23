@@ -20,38 +20,41 @@
 #' @param ... other arguments passed on to \code{layer}. These are often aesthetics, used to set an aesthetic to a fixed value, like \code{color = 'red'} or \code{size = 3}. They may also be parameters to the paired geom/stat.
 #' @examples
 #'
-#' data(Titanic)
-#' titanic <- as.data.frame(Titanic)
-#' titanic$Survived <- factor(titanic$Survived, levels=c("Yes", "No"))
+#' data(titanic)
 #'
-#'
-#' ggplot(data=titanic) +
-#'   geom_mosaic(aes(weight=Freq, x=product(Class), fill=Survived))
+#' ggplot(data = titanic) +
+#'   geom_mosaic(aes(x = product(Class), fill = Survived))
 #' # good practice: use the 'dependent' variable (or most important variable)
 #' # as fill variable
 #'
-#' ggplot(data=titanic) +
-#'   geom_mosaic(aes(weight=Freq, x=product(Class, Age), fill=Survived))
+#' ggplot(data = titanic) +
+#'   geom_mosaic(aes(x = product(Class, Age), fill = Survived))
 #'
-#' ggplot(data=titanic) +
-#'   geom_mosaic(aes(weight=Freq, x=product(Class), conds=product(Age), fill=Survived))
-#' ggplot(data=titanic) +
-#'   geom_mosaic(aes(weight=Freq, x=product(Survived, Class), fill=Age))
+#' ggplot(data = titanic) +
+#'   geom_mosaic(aes(x = product(Class), conds = product(Age), fill = Survived))
+#'
+#' ggplot(data = titanic) +
+#'   geom_mosaic(aes(x = product(Survived, Class), fill = Age))
 #'
 #' # Just excluded for timing. Examples are included in testing to make sure they work
 #' \dontrun{
-#' data(happy, package="productplots")
+#' data(happy)
 #'
-#' ggplot(data = happy) + geom_mosaic(aes(x=product(happy)), divider="hbar")
-#' ggplot(data = happy) + geom_mosaic(aes(x=product(happy))) +
+#' ggplot(data = happy) + geom_mosaic(aes(x = product(happy)), divider="hbar")
+#'
+#' ggplot(data = happy) + geom_mosaic(aes(x = product(happy))) +
 #'   coord_flip()
+#'
 #' # weighting is important
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight=wtssall, x=product(happy)))
+#'
 #' ggplot(data = happy) + geom_mosaic(aes(weight=wtssall, x=product(health), fill=happy)) +
 #'   theme(axis.text.x=element_text(angle=35))
+#'
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight=wtssall, x=product(health), fill=happy), na.rm=TRUE)
+#'
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight=wtssall, x=product(health, sex, degree), fill=happy),
 #'   na.rm=TRUE)
@@ -61,17 +64,19 @@
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy), na.rm=TRUE, offset=0) +
 #'   scale_x_productlist("Age", labels=c(17+1:72))
+#'
 #' # thin out labels manually:
 #' labels <- c(17+1:72)
 #' labels[labels %% 5 != 0] <- ""
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy), na.rm=TRUE, offset=0) +
 #'   scale_x_productlist("Age", labels=labels)
+#'
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy, conds = product(sex)),
 #'   divider=mosaic("v"), na.rm=TRUE, offset=0.001) +
 #'   scale_x_productlist("Age", labels=labels)
-#' # facetting works!!!!
+#'
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight=wtssall, x=product(age), fill=happy), na.rm=TRUE, offset = 0) +
 #'   facet_grid(sex~.) +
@@ -80,6 +85,7 @@
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight = wtssall, x = product(happy, finrela, health)),
 #'   divider=mosaic("h"))
+#'
 #' ggplot(data = happy) +
 #'   geom_mosaic(aes(weight = wtssall, x = product(happy, finrela, health)), offset=.005)
 #'
@@ -97,26 +103,51 @@ geom_mosaic <- function(mapping = NULL, data = NULL, stat = "mosaic",
     stop("stat_mosaic() must not be used with a y aesthetic.", call. = FALSE)
   } else mapping$y <- structure(1L, class = "productlist")
 
+  #browser()
+
   aes_x <- mapping$x
   if (!is.null(aes_x)) {
     aes_x <- rlang::eval_tidy(mapping$x)
+    var_x <- paste0("x__", as.character(aes_x))
+  }
+
+  aes_fill <- mapping$fill
+  var_fill <- ""
+  if (!is.null(aes_fill)) {
+    aes_fill <- rlang::quo_text(mapping$fill)
+    var_fill <- paste0("x__fill__", aes_fill)
+    if (aes_fill %in% as.character(aes_x)) {
+      idx <- which(aes_x == aes_fill)
+      var_x[idx] <- var_fill
+    } else {
+      mapping[[var_fill]] <- mapping$fill
+    }
+  }
+
+  aes_alpha <- mapping$alpha
+  var_alpha <- ""
+  if (!is.null(aes_alpha)) {
+    aes_alpha <- rlang::quo_text(mapping$alpha)
+    var_alpha <- paste0("x__alpha__", aes_alpha)
+    if (aes_alpha %in% as.character(aes_x)) {
+      idx <- which(aes_x == aes_alpha)
+      var_x[idx] <- var_alpha
+    } else {
+      mapping[[var_alpha]] <- mapping$alpha
+    }
+  }
+
+
+  #  aes_x <- mapping$x
+  if (!is.null(aes_x)) {
     mapping$x <- structure(1L, class = "productlist")
-    var_x <- paste0("x", seq_along(aes_x), "__", as.character(aes_x))
+
     for (i in seq_along(var_x)) {
       mapping[[var_x[i]]] <- aes_x[[i]]
     }
   }
 
 
-  # aes_y <- mapping$y
-  # if (!is.null(aes_y)) {
-  #   aes_y <- rlang::eval_tidy(mapping$y)
-  #   mapping$y <- structure(1L, class = "productlist")
-  #   var_y <- paste0("y", seq_along(aes_y), "__", as.character(aes_y))
-  #   for (i in seq_along(var_y)) {
-  #     mapping[[var_y[i]]] <- aes_y[[i]]
-  #   }
-  # }
   aes_conds <- mapping$conds
   if (!is.null(aes_conds)) {
     aes_conds <- rlang::eval_tidy(mapping$conds)
@@ -144,6 +175,11 @@ geom_mosaic <- function(mapping = NULL, data = NULL, stat = "mosaic",
   )
 }
 
+#' Geom proto
+#'
+#' @format NULL
+#' @usage NULL
+#' @export
 #' @importFrom grid grobTree
 GeomMosaic <- ggplot2::ggproto(
   "GeomMosaic", ggplot2::Geom,
@@ -184,8 +220,7 @@ GeomMosaic <- ggplot2::ggproto(
     )
   },
 
-
-  draw_key = ggplot2::draw_key_rect
+  draw_key = ggplot2::draw_key_polygon
 )
 
 
